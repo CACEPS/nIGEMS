@@ -1,5 +1,6 @@
 # nIGEMS
 # Governance architecture shapes the equitable allocation of the global carbon budget
+*Abul Quasem Al-Amin & Naomi Oreskes (2026)*
 # nIGEMS — Reproduction repository (version 36)
 
 Code and data to reproduce *Governance architecture shapes the equitable allocation of the global carbon budget* (manuscript `IGEMS_N_CC_v36_AlAmin.docx`). The repository is named **nIGEMS** — the "n" denotes the Nature submission — formerly IGEMS.
