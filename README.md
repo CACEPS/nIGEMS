@@ -1,66 +1,73 @@
-# nIGEMS
-# Governance architecture shapes the equitable allocation of the global carbon budget
+# nIGEMS — Replication Package (v40)
 
-# nIGEMS — Reproduction repository (version 36)
+Replication code and data for **"Governance architecture shapes the robustness of global carbon budget allocation"**
 
-Code and data to reproduce *Governance architecture shapes the equitable allocation of the global carbon budget* (manuscript `IGEMS_N_CC_v36_AlAmin.docx`). The repository is named **nIGEMS** — the "n" denotes the Nature submission — formerly IGEMS.
+IGEMS (Integrated Global Emissions Management System) is a governance-allocation simulator that isolates the **governance channel** — the sequence and principle by which the carbon budget is divided — while holding the physical budget, decarbonization rate, and growth identical across four allocation mechanisms (market/grandfathering, equity/CBDR+RC, capacity, hybrid cooperative), nine macro-regions, fifty years.
 
-Everything here is at a single consistent version (v36). The model uses one allocation convention throughout: each base mechanism (market, equity, capacity) is normalised to the 10 Gt budget, the hybrid is the 40:35:25 blend of those normalised vectors renormalised to 10 Gt, so every allocation sums to 10 Gt.
+This package updates the v36 bundle to **v40**, adding the endogenous strategic-compliance game (Note S7) and the historical back-test (Note S8).
 
-## What reproduces what
+---
 
-| Manuscript element | File |
-| --- | --- |
-| Tables 4, 5, 6, 8; Notes S1–S6; Solidarity Fund | `IGEMS_complete_v36.gms` |
-| Table 9, Figure 11 (RICE coupling) | `IGEMS_RICE_coupling_v36.gms` |
-| Baseline inputs (Table 2) | `data_baseline_regions.csv` |
-| Raw base allocation vectors | `data_base_allocations.csv` |
-| Table 5 allocations, cuts, Justice Index | `data_table5_allocations.csv` |
-| Per-mechanism outcomes (compliance, cost, regret, per-capita) | `model_outcomes_v36.csv` |
-| Solidarity Fund derivation | `model_fund_derivation.csv` |
-| Coupling headline (CPP vs CPD) | `coupling_table9.csv` |
-| λ-sweep and flip thresholds | `coupling_lambda_sweep.csv` |
-| Coupling sensitivity grid | `coupling_sensitivity_grid.csv` |
-| Figure 11 image | `Figure11_coupling.png` |
+## Structure
 
-## GAMS (two files; both v36)
+```
+nIGEMS_v40/
+  gams/        self-contained GAMS models (all data embedded)
+  src/         Python reproduction scripts
+  data/        input and reference data (+ data/backtest/ observed data)
+  results/     reference figures and expected outputs
+  future_empirical_validation/   prospective extension (not a paper result)
+  requirements.txt
+```
 
-- **`IGEMS_complete_v36.gms`** — the all-in-one IGEMS model: data, allocations, capacity-graded feasible rates, trajectory-convergence compliance, Gini/Justice Index, stylised MAC cost layer, Monte Carlo, Nash NLP, acceptance, six-metric robustness, two-bloc, stylised TCRE climate, structural sensitivity, Solidarity Fund, and the per-capita / equity-cut reconciliation.
-  - `gams IGEMS_complete_v36.gms` (deterministic) · `--STOCH=1` · `--STRUCT=1` · `--OPTIM=1`
-- **`IGEMS_RICE_coupling_v36.gms`** — companion one-way soft-link. Each IGEMS allocation enters a RICE/DICE-form regional cost module as an exogenous emission-cap glide path; the module prices the caps and never re-optimises the allocation. Damages off; SSP2-4.5 baseline; no-trade headline.
-  - `gams IGEMS_RICE_coupling_v36.gms` · `--SOLVE=1` (optional NLP cross-check)
+## What each component reproduces
 
-The coupling is a deliberately separate model (RICE, not IGEMS): it shares the same nine regions and four allocation vectors but is a distinct cost module. They are kept as two files because GAMS identifiers are case-insensitive and the two models reuse several names (`Cost`/`cost`, `dmax`, the time set) with different meanings; merging into one literal file would require renaming working code. Run them in sequence.
+**GAMS (all-in-one models; data embedded, no external inputs required)**
+- `gams/IGEMS_complete_v40.gms` — the complete IGEMS model: the four allocation mechanisms, the corridor/compliance metric, and the headline allocations and compliance rates. This is the single all-in-one model file.
+- `gams/IGEMS_RICE_coupling_v40.gms` — the IGEMS–RICE minimum coupling (§4.8, Table 9, Figure of the cost-effectiveness reordering).
 
-## Python runners (numpy, pandas)
+**Python (run from the package root)**
+- `src/igems_optionB.py`, `src/igems_optionC.py` — binary corridor and continuous-adherence compliance metrics (Table 6, core compliance results). Self-contained.
+- `src/igems_altcompliance_v40.py` — ranking robustness to the **form** of the compliance function (Note S2 / Table S8). Self-contained.
+- `src/igems_extended_analyses_v40.py` — Monte Carlo ensemble (Table 8), six-metric robustness (Note S4), and related sensitivity analyses. Self-contained.
+- `src/igems_iam_supplement.py` — IAM coupling, λ-sweep, and the cost-effectiveness reordering (Table 9). Self-contained.
+- `src/igems_strategic_compliance.py`, `src/reproduce_S7.py`, `src/make_figure.py` — **endogenous strategic-participation game** (Note S7, Tables S7.1–S7.3). Reads `data/data_baseline_regions.csv` and `data/data_allocations.csv`.
+- `src/igems_historical_backtest.py` — **historical back-test** against observed NDC ambition and emissions trajectories (Note S8). Reads `data/backtest/*.csv`.
 
-- `igems_optionB.py` — trajectory-convergence compliance + Monte Carlo
-- `igems_optionC.py` — acceptance-weighted compliance (Note S2)
-- `igems_iam_supplement.py` — stylised MAC cost layer (Note S1)
-- `igems_extended_analyses_v36.py` — six-metric robustness, structural sensitivity, stylised TCRE climate, two-bloc (Notes S3–S5)
+## Quick start
 
-## Headline numbers (v36)
+```bash
+pip install -r requirements.txt
 
-- Compliance: binary market 0.24 vs 0.46 others; Monte Carlo mean hybrid 0.54 vs market 0.46; P(high) 14% vs 4%; continuous hybrid 0.94; cross-metric regret hybrid 0.045.
-- Per-capita ratio: 11.1 (market) → 2.6 (hybrid). Parity benchmark ~1.0 t/person.
-- Equity rule: development surplus only for Sub-Saharan Africa; India ~33%, South Asia ~30% cuts.
-- Solidarity Fund: ~$1.0–2.3T/yr (2.36 Gt × IPCC AR6 1.5 °C price), corroborated by IHLEG.
-- RICE coupling: cost per planned tonne — market cheapest (100), hybrid 110, equity 129, capacity 133. Cost per expected-delivered tonne (λ=1) — market most expensive (100), hybrid 90, equity 58. Flip at λ* ≈ 0.84 (hybrid), 0.81 (equity); feasible at finite prices ($214–252/t); robust across SSP1/2/5, backstop, MAC slope, discount rate, CDR cap (λ* 0.76–0.94).
+# Endogenous strategic compliance (Note S7)
+python src/reproduce_S7.py
 
-## Reproduction notes
+# Historical back-test (Note S8)
+python src/igems_historical_backtest.py --data data/backtest
 
-Deterministic, Gini, MAC, six-metric, fund, per-capita, and the full coupling (CPP, CPD, λ*) results are closed-form and match exactly across GAMS, Python, and the CSVs. Monte Carlo / climate / structural modules use random draws; GAMS uses native RNG (`execseed` fixed), so interval and probability values are close to, not bit-identical to, the Python runners. Means and rankings agree.
+# Compliance-function robustness (Note S2 / Table S8)
+python src/igems_altcompliance_v40.py
 
-## External data sources (author-verified)
+# Monte Carlo robustness and extended analyses (Table 8, Note S4)
+python src/igems_extended_analyses_v40.py
+```
 
-Global Carbon Project / Our World in Data (baseline); IPCC AR6 WGIII 2022 (carbon prices); UNEP Emissions Gap Report 2025 (ambition gap); IHLEG / Songwe, Stern & Bhattacharya 2022 (finance need); IMF 2023 (subsidies); Riahi et al. 2017, van Vuuren et al. 2022 (cost-optimal SSP allocations).
+The GAMS models require a GAMS installation; the Python scripts require only the packages in `requirements.txt`.
 
-## Compliance-function robustness (Note S2 / Table S8)
-- `igems_altcompliance_v36.py` — applies three deliberately different compliance
-  functions (geometric binary corridor [primary], logistic acceptance, linear
-  implementation difficulty) to identical capacity-graded effort and allocations.
-  Under the main-text unweighted region-year aggregation the ranking is preserved
-  across all three forms (market least reachable 93-100% of MC draws; hybrid most
-  robust 58-68%; hybrid best or tied-best deterministically under every form), so the headline ordering is not an artefact
-  of the corridor's binary shape. The equity-vs-hybrid metric-dependence of Note S2 is
-  shown to be an aggregation effect (population weighting), not a functional-form effect.
+## Expected results (spot checks)
+
+- **Strategic game (Note S7):** ranking by delivered abatement is `equity > hybrid > capacity > market`; the market rule is the cooperative optimum in fewer than 6% of grid parameterisations.
+- **Back-test (Note S8):** on observed emissions shares the grandfathering/market rule fits best (RMSE ≈ 0.045 — partly true by construction); on NDC ambition no rule fits well (RMSE ≈ 0.35).
+- **Compliance-function robustness (Note S2):** under the main-text aggregation the market rule is least reachable and the hybrid is the most robust across geometric, logistic, and linear compliance functions.
+
+## Data provenance
+
+The historical back-test (Note S8) uses observed emissions and NDC targets for **15 countries with complete, reliable public records**: USA, CAN, MEX, CHN, IND, DEU, FRA, GBR, BRA, IDN, JPN, SAU, ZAF, NGA, PAK (JPN is excluded from the NDC test, leaving 14). NDC targets were compiled from the **UNFCCC NDC Registry**; emissions from the **Global Carbon Project**.
+
+A further 59 countries lack complete, reliable NDC or emissions records in these public sources — a well-documented data gap recognised by the UNFCCC, the World Bank, and national-inventory reporting. In the raw working file these countries were represented by placeholder rows; they were never included in any reported analysis, and the script restricts the back-test to the 15 real-data countries by design. To avoid any ambiguity in a public repository, the placeholder rows have been removed here, so this package distributes only genuine observed data.
+
+`future_empirical_validation/` contains a prospective behavioural-law script. It is exploratory future work, **not** a result reported in the manuscript, and requires the user's own observed panel data to run.
+
+## Repository
+
+github.com/caceps/nIGEMS (made public on acceptance; a read-only copy is available to editors on request). An archived release with a persistent DOI will be minted at acceptance.
